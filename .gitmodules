@@ -1,0 +1,3 @@
+[submodule "Pokerole-Data"]
+	path = Pokerole-Data
+	url = https://github.com/Pokerole-Software-Development/Pokerole-Data.git
