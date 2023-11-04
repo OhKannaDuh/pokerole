@@ -4,16 +4,16 @@
       <q-input label="Search" filled v-model:model-value="search" debounce="500" />
     </div>
     <div class="q-pa-sm col-12 row">
-      <div class="col q-px-sm">
+      <div class="col-12 col-md-6 col-lg-3 q-px-sm">
         <q-toggle label="Search exact match" v-model:model-value="searchExact" />
       </div>
-      <div class="col q-px-sm">
+      <div class="col-12 col-md-6 col-lg-3 q-px-sm">
         <q-toggle label="Only show starters" v-model:model-value="starterOnly" />
       </div>
-      <div class="col q-px-sm">
+      <div class="col-12 col-md-6 col-lg-3 q-px-sm">
         <q-select label="Type One" v-model:model-value="typeOne" :options="types" />
       </div>
-      <div class="col q-px-sm">
+      <div class="col-12 col-md-6 col-lg-3 q-px-sm">
         <q-select label="Type Two" v-model:model-value="typeTwo" :options="types" />
       </div>
     </div>
@@ -26,7 +26,8 @@
           </q-avatar>
           <div class="col-grow">
             <p class="text" v-text="`#${entry.DexID}`" />
-            <p class="text" v-text="`${entry.Name} (${entry.DexCategory})`" />
+            <p class="text" v-text="entry.Name" />
+            <p class="text" v-text="entry.DexCategory" />
             <p class="text">
               <span :class="`type-text type-${entry.Type1}`" v-text="entry.Type1" />
 
@@ -40,77 +41,107 @@
             <p class="text" v-text="`Avg Weight: ${entry.Weight.Kilograms}kg`" />
           </div>
         </q-card-section>
-
         <q-card-section>
-          {{ entry.DexDescription }}
+          <q-btn class="full-width" square color="positive" @click="openModal(entry)">View</q-btn>
         </q-card-section>
       </q-card>
     </div>
+
+    <q-dialog v-model="modalShow" square full-width full-height>
+      <q-card>
+        <q-card-section class="q-pb-none">
+          <q-btn class="full-width" square color="negative" @click="modalShow = false">Close</q-btn>
+        </q-card-section>
+        <q-card-section class="q-pb-none">
+          <div class="text-h6" v-text="`#${modalEntry.DexID} - ${modalEntry.Name}`" />
+          <div v-text="modalEntry.DexCategory" />
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-py-none" style="text-align: center">
+          <q-avatar size="256px" class="col-shrink"> <img :src="`/images/${modalEntry.Image}`" alt="test" /></q-avatar>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section>
+          <p class="text">
+            A <span :class="`type-text type-${modalEntry.Type1}`" v-text="modalEntry.Type1" />
+
+            <template v-if="modalEntry.Type2">
+              &
+              <span :class="`type-text type-${modalEntry.Type2}`" v-text="modalEntry.Type2" />
+            </template>
+            Type
+          </p>
+
+          <p class="text" v-text="`Avg Height: ${modalEntry.Height.Meters}m`" />
+          <p class="text" v-text="`Avg Weight: ${modalEntry.Weight.Kilograms}kg`" />
+        </q-card-section>
+
+        <q-card-section>{{ modalEntry.DexDescription }}</q-card-section>
+
+        <q-separator />
+
+        <q-card-section>
+          <p class="text" v-text="`Base HP: ${modalEntry.BaseHP}`" />
+          <poke-attribute name="Strength" :base="modalEntry.Strength" :max="modalEntry.MaxStrength" />
+          <poke-attribute name="Dexterity" :base="modalEntry.Dexterity" :max="modalEntry.MaxDexterity" />
+          <poke-attribute name="Vitality" :base="modalEntry.Vitality" :max="modalEntry.MaxVitality" />
+          <poke-attribute name="Special" :base="modalEntry.Special" :max="modalEntry.MaxSpecial" />
+          <poke-attribute name="Insight" :base="modalEntry.Insight" :max="modalEntry.MaxInsight" />
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section>
+          <p class="text" v-text="`Abilities:`" />
+          <p class="text" v-text="`${modalEntry.Ability1}:`" />
+          <p class="text" v-text="abilities[modalEntry.Ability1].Effect" />
+
+          <template v-if="modalEntry.Ability2">
+            <p class="text" v-text="`${modalEntry.Ability2}:`" />
+            <p class="text" v-text="abilities[modalEntry.Ability2].Effect" />
+          </template>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section>
+          <p class="text" v-text="`Moves:`" />
+          <q-expansion-item
+            v-for="(move, index) in modalEntry.Moves"
+            :key="index"
+            :label="`${move.Name} (${move.Learned})`"
+            expand-separator
+            header-inser-level="0"
+          >
+            <poke-move :move="moves[move.Name]" />
+          </q-expansion-item>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import pokedex from '../data/pokedex.json';
-
-interface Move {
-  Learned: string;
-  Name: string;
-}
-
-interface Height {
-  Meters: number;
-  Feet: number;
-}
-
-interface Weight {
-  Kilograms: number;
-  Pounds: number;
-}
-
-interface Evolution {
-  To: string;
-  Kind: string;
-  Speed: string;
-}
-
-interface Entry {
-  Number: number;
-  DexID: string;
-  Name: string;
-  Type1: string;
-  Type2: string;
-  BaseHP: number;
-  Strength: number;
-  MaxStrength: number;
-  Dexterity: number;
-  MaxDexterity: number;
-  Vitality: number;
-  MaxVitality: number;
-  Special: number;
-  MaxSpecial: number;
-  Insight: number;
-  MaxInsight: number;
-  Ability1: string;
-  Ability2: string;
-  HiddenAbility: string;
-  EventAbilities: string;
-  RecommendedRank: string;
-  GenderType: string;
-  Legendary: boolean;
-  GoodStarter: boolean;
-  _id: string;
-  DexCategory: string;
-  Height: Height;
-  Weight: Weight;
-  DexDescription: string;
-  Evolutions: Evolution[];
-  Image: string;
-  Moves: Move[];
-}
+import abilities from '../data/abilities.json';
+import moves from '../data/moves.json';
+import Entry from 'src/Entry';
+import PokeAttribute from 'src/components/PokeAttribute.vue';
+import PokeMove from 'src/components/PokeMove.vue';
 
 export default defineComponent({
   name: 'IndexPage',
+
+  components: {
+    PokeAttribute,
+    PokeMove,
+  },
+
   setup() {
     const search = ref<string>('');
     const searchExact = ref<boolean>(false);
@@ -132,7 +163,17 @@ export default defineComponent({
       }
     }
 
-    return { pokedex, search, searchExact, starterOnly, types, typeOne, typeTwo };
+    const modalEntry = ref<Entry>(pokedex[0]);
+    const modalShow = ref<boolean>(false);
+
+    return { pokedex, abilities, moves, search, searchExact, starterOnly, types, typeOne, typeTwo, modalEntry, modalShow };
+  },
+
+  methods: {
+    openModal(entry: Entry): void {
+      this.modalEntry = entry;
+      this.modalShow = true;
+    },
   },
 
   computed: {
@@ -184,10 +225,6 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-.text {
-  margin: 0;
-}
-
 .entry {
   box-shadow: none;
   border: 4px transparent solid;
@@ -200,76 +237,10 @@ export default defineComponent({
 .legendary {
   border-bottom: 4px goldenrod solid;
 }
+</style>
 
-.type-Normal {
-  color: #a8a77a;
-}
-
-.type-Fire {
-  color: #ee8130;
-}
-
-.type-Water {
-  color: #6390f0;
-}
-
-.type-Electric {
-  color: #f7d02c;
-}
-
-.type-Grass {
-  color: #7ac74c;
-}
-
-.type-Ice {
-  color: #96d9d6;
-}
-
-.type-Fighting {
-  color: #c22e28;
-}
-
-.type-Poison {
-  color: #a33ea1;
-}
-
-.type-Ground {
-  color: #e2bf65;
-}
-
-.type-Flying {
-  color: #a98ff3;
-}
-
-.type-Psychic {
-  color: #f95587;
-}
-
-.type-Bug {
-  color: #a6b91a;
-}
-
-.type-Rock {
-  color: #b6a136;
-}
-
-.type-Ghost {
-  color: #735797;
-}
-
-.type-Dragon {
-  color: #6f35fc;
-}
-
-.type-Dark {
-  color: #705746;
-}
-
-.type-Steel {
-  color: #b7b7ce;
-}
-
-.type-Fairy {
-  color: #d685ad;
+<style lang="scss">
+.q-dialog__inner {
+  padding: 0;
 }
 </style>

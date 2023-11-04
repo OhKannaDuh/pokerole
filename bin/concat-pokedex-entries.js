@@ -1,11 +1,9 @@
 const fs = require('fs');
-const https = require('https');
 
 const directory = __dirname + '/../Pokerole-Data/Version20/Pokedex/';
 
-let output = {};
-
-let base = 'https://raw.githubusercontent.com/Willowlark/Pokerole-Data/master/images/HomeSprites/';
+let output = [];
+let entries = {};
 
 fs.readdirSync(directory).forEach((file) => {
   const path = directory + file;
@@ -14,26 +12,64 @@ fs.readdirSync(directory).forEach((file) => {
     return;
   }
 
-  output[data.Number] = data;
+  output.push(data);
+});
 
-  const save = 'src/assets/images/' + data.Image;
-  let uri = base + data.Imnage;
+output.sort((a, b) => {
+  const aId = parseInt(a.DexID);
+  const bId = parseInt(b.DexID);
 
-  let stream = fs.createWriteStream(save);
+  if (aId < bId) {
+    return -1;
+  }
 
-  https
-    .get(uri, (response) => {
-      response.pipe(stream);
+  if (aId > bId) {
+    return 1;
+  }
 
-      stream.on('finish', () => {
-        stream.close();
-        console.log(`Image downloaded as ${save}`);
-      });
-    })
-    .on('error', (err) => {
-      fs.unlink(save);
-      console.error(`Error downloading image: ${err.message}`);
-    });
+  if (a.DexID.includes('A')) {
+    return 1;
+  }
+
+  if (b.DexID.includes('A')) {
+    return -1;
+  }
+
+  if (a.DexID.includes('G')) {
+    return 1;
+  }
+
+  if (b.DexID.includes('G')) {
+    return -1;
+  }
+
+  if (a.DexID.includes('M1') || b.DexID.includes('M1')) {
+    if (a.DexID.includes('M2')) {
+      return 1;
+    }
+
+    if (b.DexID.includes('M2')) {
+      return -1;
+    }
+  }
+
+  if (a.DexID.includes('M1')) {
+    return 1;
+  }
+
+  if (b.DexID.includes('M1')) {
+    return -1;
+  }
+
+  if (a.DexID.includes('M2')) {
+    return 1;
+  }
+
+  if (b.DexID.includes('M2')) {
+    return -1;
+  }
+
+  return 0;
 });
 
 fs.writeFile(__dirname + '/../src/data/pokedex.json', JSON.stringify(output, null, 4), 'utf8', (err) => {
